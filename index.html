@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NovoLine Camera Monitoring</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <div id="app">
+      <div class="camera-container">
+        <canvas id="assembly-line"></canvas>
+        <div class="camera-lens-filter"></div>
+        
+        <div class="ui-layer">
+          <div class="camera-info">
+            <div class="rec">
+              <span class="dot"></span> REC
+            </div>
+            <div class="cam-name">CAM-01 / HD-1080p</div>
+            <div class="stats" id="stats">PENS SCANNED: 0 | DEFECTS: 0</div>
+          </div>
+          
+          <div class="timestamp" id="timestamp">2026-04-17 12:25:00</div>
+          
+          <div class="controls-panel">
+            <div class="control-grid">
+              <div class="control-group">
+                <label for="speed-slider">BELT SPEED</label>
+                <input type="range" id="speed-slider" min="0" max="100" step="1" value="30">
+              </div>
+              <div class="control-group">
+                <label for="slide-slider">VIBRATION</label>
+                <input type="range" id="slide-slider" min="0" max="30" step="1" value="10">
+              </div>
+              <div class="control-group">
+                <label for="mistake-slider">DEFECT RATE (%)</label>
+                <input type="range" id="mistake-slider" min="0" max="100" step="1" value="15">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
