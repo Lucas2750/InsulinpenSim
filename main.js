@@ -11,6 +11,7 @@ let totalDefects = 0;
 const speedSlider = document.getElementById('speed-slider');
 const slideSlider = document.getElementById('slide-slider');
 const mistakeSlider = document.getElementById('mistake-slider');
+const densitySlider = document.getElementById('density-slider');
 const statsDisplay = document.getElementById('stats');
 
 function resize() {
@@ -61,9 +62,11 @@ class PenPackage {
       }
 
       this.pens.push({
-        xOffset: offsetsX[i] + (Math.random() - 0.5) * 15,
-        yOffset: (Math.random() - 0.5) * 35,
-        rotation: -Math.PI / 2 + (Math.random() - 0.5) * 0.15,
+        xOffset: offsetsX[i],
+        yOffset: 0,
+        pvx: 0,
+        pvy: 0,
+        rotation: -Math.PI / 2 + (Math.random() - 0.5) * 0.05,
         rollPhase: Math.random() * Math.PI * 2,
         hasLabel,
         labelColor,
@@ -80,16 +83,76 @@ class PenPackage {
     this.vx += (targetVx - this.vx) * 0.1;
     this.vy += (0 - this.vy) * 0.1;
 
-    // Brownian motion (vibration)
-    const vibration = slideFactor * 0.05;
-    this.vx += (Math.random() - 0.5) * vibration * 15; // Massive X vibration front/back
-    this.vy += (Math.random() - 0.5) * vibration * 2; // More Y vibration
+    // Tray itself just moves smoothly with minor wobble
+    this.vx += (Math.random() - 0.5) * 0.5;
+    this.vy += (Math.random() - 0.5) * 0.2;
 
     this.x += this.vx;
     this.y += this.vy;
 
+    const vibration = slideFactor * 0.15;
+
     for (const p of this.pens) {
-      p.rollPhase += this.vx / 18;
+      // Pens vibrate internally
+      p.pvx += (Math.random() - 0.5) * vibration * 8;
+      p.pvy += (Math.random() - 0.5) * vibration * 4;
+      
+      p.pvx *= 0.85; // friction
+      p.pvy *= 0.85;
+
+      p.xOffset += p.pvx;
+      p.yOffset += p.pvy;
+
+      p.rollPhase += (this.vx + p.pvx) / 18;
+    }
+
+    // Resolve internal pen collisions
+    for (let iter = 0; iter < 3; iter++) {
+      for (let i = 0; i < this.pens.length; i++) {
+        const p1 = this.pens[i];
+        
+        // Bounds of the tray to keep pens inside
+        const penW = 38;
+        const penH = 200;
+        
+        const minX = -this.trayWidth/2 + penW/2 + 8;
+        const maxX = this.trayWidth/2 - penW/2 - 8;
+        const minY = -this.trayHeight/2 + penH/2 + 8;
+        const maxY = this.trayHeight/2 - penH/2 - 8;
+
+        if (p1.xOffset < minX) { p1.xOffset = minX; p1.pvx *= -0.5; }
+        if (p1.xOffset > maxX) { p1.xOffset = maxX; p1.pvx *= -0.5; }
+        if (p1.yOffset < minY) { p1.yOffset = minY; p1.pvy *= -0.5; }
+        if (p1.yOffset > maxY) { p1.yOffset = maxY; p1.pvy *= -0.5; }
+
+        for (let j = i + 1; j < this.pens.length; j++) {
+          const p2 = this.pens[j];
+          const dx = p1.xOffset - p2.xOffset;
+          const dy = p1.yOffset - p2.yOffset;
+          
+          const minDistX = penW + 4; 
+          const minDistY = penH + 4;
+          
+          if (Math.abs(dx) < minDistX && Math.abs(dy) < minDistY) {
+            const overlapX = minDistX - Math.abs(dx);
+            const overlapY = minDistY - Math.abs(dy);
+            
+            if (overlapX < overlapY) {
+              const sign = dx > 0 ? 1 : -1;
+              p1.xOffset += (overlapX / 2) * sign;
+              p2.xOffset -= (overlapX / 2) * sign;
+              p1.pvx += sign * 1.5;
+              p2.pvx -= sign * 1.5;
+            } else {
+              const sign = dy > 0 ? 1 : -1;
+              p1.yOffset += (overlapY / 2) * sign;
+              p2.yOffset -= (overlapY / 2) * sign;
+              p1.pvy += sign * 1.5;
+              p2.pvy -= sign * 1.5;
+            }
+          }
+        }
+      }
     }
 
     // Count if reached midway
@@ -344,7 +407,9 @@ function animate(time) {
   const logicalRight = width / 2 + (width / 2) / ZOOM_OUT;
 
   // Spawner for GROUPS of 3 as packages
-  const baseInterval = 3500; // Increased to provide a realistic gap between packages
+  const density = parseFloat(densitySlider.value);
+  const densityFactor = 50 / density;
+  const baseInterval = 3500 * densityFactor; 
   const currentInterval = baseInterval / Math.max(0.5, speed);
 
   spawnTimer += dt;
